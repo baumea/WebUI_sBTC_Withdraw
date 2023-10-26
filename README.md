@@ -11,9 +11,9 @@ Start your local development servers and then simply run `yarn dev`.
 
 ![Home](./screenshots/0_homescreen.png "Waiting for user to connect")
 
-![Sign](./screenshots/1_ready.png "Prove ownership of sBTC")
+![Sign](./screenshots/1_sign.png "Prove ownership of sBTC")
 
-![Ready](./screenshots/2_sign.png "Do you want to deposit?")
+![Ready](./screenshots/2_ready.png "Do you want to deposit?")
 
 ![Confirmed](./screenshots/3_confirmed.png "Transaction is confirmed")
 
