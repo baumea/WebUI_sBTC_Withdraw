@@ -4,7 +4,9 @@ This interace has been developed within the sBTC Developer Release Program.
 
 ## Usage
 
-Start your local development servers and then simply run `yarn dev`.
+Make sure you have your [sBTC Development Environment](https://github.com/stacks-network/sbtc/tree/main/devenv) up and running.
+After fetchinng the dependencies with `yarn install`, you can start the web interface with `yarn dev`.
+The web UI is accessible at `http://localhost:3000/`.
 
 
 ## Screenshots
