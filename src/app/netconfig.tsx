@@ -1,0 +1,10 @@
+// import { TestnetHelper } from 'sbtc';
+// const network = Object.freeze(new TestnetHelper());
+import { DevEnvHelper } from 'sbtc';
+export const NETWORK = Object.freeze(new DevEnvHelper());
+export const MEMPOOLTXURL = "http://127.0.0.1:8083/tx/";
+export const MEMPOOLURLADDRESS = "http://127.0.0.1:8083/address/";
+export const MEMPOOLTXAPIURL = "http://127.0.0.1:8083/api/tx/";
+export const STACKSAPIURL = "http://localhost:3999/extended/v1/address/";
+export const STACKSURLADDRESS= "http://127.0.0.1:3020/address/";
+export const STACKSURLADDRESSPOST = "?chain=testnet&api=http://localhost:3999";
