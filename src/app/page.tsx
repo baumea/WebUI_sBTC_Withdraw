@@ -4,8 +4,7 @@ import type { UserData } from '@stacks/connect';
 import { AppConfig, UserSession, showConnect, openSignatureRequestPopup } from "@stacks/connect";
 import { StacksTestnet } from "@stacks/network";
 import { bytesToHex, hexToBytes } from '@stacks/common';
-import { sbtcDepositHelper, sbtcWithdrawHelper, sbtcWithdrawMessage, WALLET_00 } from 'sbtc';
-import type { UtxoWithTx } from 'sbtc';
+import { sbtcWithdrawHelper, sbtcWithdrawMessage, WALLET_00 } from 'sbtc';
 import * as btc from '@scure/btc-signer';
 
 // Network configuration
@@ -23,7 +22,6 @@ import { LogWindow } from './logwindow';
 import { Alert, Badge, Banner, Button, Card, Spinner } from 'flowbite-react';
 
 // Setting: How much to deposit / withdraw
-const DEPOSITAMOUNT : number = 10_000;
 const WITHDRAWAMOUNT : number = 10_000;
 
 // Main component
@@ -34,13 +32,6 @@ export default function Home() {
   const [txInfo, setTxInfo] = useState<txInfoType>(emptyTxInfo);
   const [userData, setUserData] = useState<UserData | null>(null);
   
-  // Log current state for debug purposes
-  // useEffect(() => {
-  //   console.log("NEW STATE: ", state);
-  //   console.log("WALLET: ", wallet);
-  //   console.log("DEPOSIT INFO: ", depositInfo);
-  // }, [state]);
-
   // Reset application
   const reset = () : void => {
     setState("DISCONNECTED");
@@ -68,19 +59,7 @@ export default function Home() {
 
   // Retrieve necessary information from the wallet and from the network
   // This method depends on the network we are on. For now, it is implemented
-  // for the local Development Network. Also, there are a few issues:
-  // 
-  // setBtcAddress(userData.profile.btcAddress.p2wpkh.testnet);
-  // setBtcPublicKey(userData.profile.btcPublicKey.p2wpkh);
-  // Because of some quirks with Leather, we need to pull our BTC wallet using
-  // the helper if we are on devnet
-  // The following, as noted in the documentation, fails.
-  // According to Leather, the STX Address is the same as on the testnet.
-  // In fact, it coincides with the SBTC_FT_ADDRESS_DEVENV in the constants
-  // file (sbc).
-  // setStxAddress(bitcoinAccountA.tr.address);
-  // setFeeRate(await network.estimateFeeRate('low'));
-  // setSbtcPegAddress(await network.getSbtcPegAddress());
+  // for the local Development Network.
   const getWalletAndTxDetails = async (userData:UserData) => {
     const bitcoinAccountA = await NETWORK.getBitcoinAccount(WALLET_00);
     const addressBTC = bitcoinAccountA.wpkh.address;
@@ -94,14 +73,9 @@ export default function Home() {
       publicKeyBTC: bitcoinAccountA.publicKey.buffer.toString(),
       balanceBTC: balanceBTC,
       balanceSBTC: balanceSBTC, 
-      utxos: await NETWORK.fetchUtxos(addressBTC),
     });
-    // Deposit Information
-    // const feeRate = 1;
+    // Withdraw Information
     const feeRate = await getFeeRate();
-    // const feeRates = await NETWORK.estimateFeeRates();
-    // console.log(feeRates);
-    // const feeRate = await NETWORK.estimateFeeRate('low');
     setTxInfo({ ...txInfo,
       addressPeg: await NETWORK.getSbtcPegAddress(),
       feeRate: feeRate,
@@ -160,95 +134,23 @@ export default function Home() {
   const waitForConfirmation = (txid : string) => {
     const intervalId = setInterval(() => {
       waitUntilConfirmed(txid, intervalId);
-        // fetch(`${mempoolTxAPIUrl}${txid}/status`,{mode: 'no-cors'})
-        //   .then((response) => response.json())
-        //   .then((status) => {
-        //     if (status.confirmed) {
-        //       console.log("checkTX: CONFIRMED!");
-        //       setConfirmed(true);
-        //       clearInterval(intervalId);
-        //     }
-        //   })
-        //   .catch((err) => console.error(err));
     }, 10000);
-  }
-
-  // Hook to start deposit
-  const deposit = async () => {
-    const tx = await sbtcDepositHelper({
-      // network: TESTNET,
-      // pegAddress: sbtcPegAddress,
-      stacksAddress:        wallet.addressSTX as string,
-      amountSats:           DEPOSITAMOUNT,
-      feeRate:              txInfo.feeRate as number,
-      utxos:                wallet.utxos as UtxoWithTx[],
-      bitcoinChangeAddress: wallet.addressBTC as string,
-    });
-    setTxInfo({ ...txInfo, tx: tx });
-    // Sign and broadcast
-    const psbt = tx.toPSBT();
-    const requestParams = {
-      publicKey: wallet.publicKeyBTC as string,
-      hex: bytesToHex(psbt),
-    };
-    const txResponse = await window.btc.request("signPsbt", requestParams);
-    const formattedTx = btc.Transaction.fromPSBT(
-      hexToBytes(txResponse.result.hex)
-    );
-    formattedTx.finalize();
-    const finalTx : string = await NETWORK.broadcastTx(formattedTx);
-    setTxInfo({ ...txInfo, finalTx: finalTx });
-    // Wait for confirmatins
-    setState("REQUEST_SENT");
-    waitForConfirmation(finalTx);
   }
 
   // Hook to start withdraw
   const withdraw = async () => {
-    const sbtcWalletAddress = wallet.addressSTX;
-    const btcAddress = wallet.addressBTC;
-    const satoshis = WITHDRAWAMOUNT;
-    const signature = txInfo.signature;
-    const utxos = wallet.utxos;
+    const feeRate = await getFeeRate();
     const tx = await sbtcWithdrawHelper({
-      // paymentPublicKey: sbtcWalletAddress,
-      sbtcWalletAddress,
-      bitcoinAddress: btcAddress,
-      amountSats: satoshis,
-      signature,
-      feeRate: await NETWORK.estimateFeeRate("low"),
+      // sbtcWalletAddress: wallet.addressSTX as string,
+      bitcoinAddress: wallet.addressBTC as string,
+      amountSats: WITHDRAWAMOUNT,
+      signature: txInfo.signature as string,
+      feeRate: feeRate,
       fulfillmentFeeSats: 2000,
-      utxos,
-      bitcoinChangeAddress: btcAddress,
+      utxos: await NETWORK.fetchUtxos(wallet.addressBTC as string),
+      bitcoinChangeAddress: wallet.addressBTC as string,
     });
-    // const tx = await sbtcWithdrawHelper({
-    //   // network: TESTNET,
-    //   wallet.addressSTX,
-    //   bitcoinAddress: wallet.addressBTC as string,
-    //   amountSats: WITHDRAWAMOUNT,
-    //   txInfo.signature,
-    //   fulfillmentFeeSats: 1, // TODO: What is this?
-    //   bitcoinChangeAddress: wallet.addressBTC as string,
-    //   // pegAddress: 
-    //   feeRate: txInfo.feeRate as number,
-    //   utxos: wallet.utxos as UtxoWithTx[],
-    //   // utxoToSpendabe: 
-    //   // paymentPublicKey: 
-    // // network?: BitcoinNetwork;
-    // // amountSats: number;
-    // // signature: string;
-    // // fulfillmentFeeSats: number;
-    // // bitcoinAddress: string;
-    // // bitcoinChangeAddress: string;
-    // // pegAddress?: string;
-    // // feeRate: number;
-    // // utxos: UtxoWithTx[];
-    // // utxoToSpendable?: Partial<SpendableByScriptTypes>;
-    // // paymentPublicKey?: string;
-    // });
-    console.log("TX PREPARED");
-    console.log(tx);
-    setTxInfo({ ...txInfo, tx: tx });
+    setTxInfo({ ...txInfo, tx: tx, feeRate: feeRate});
     // Sign and broadcast
     const psbt = tx.toPSBT();
     const requestParams = {
@@ -260,18 +162,15 @@ export default function Home() {
       hexToBytes(txResponse.result.hex)
     );
     formattedTx.finalize();
-    console.log("FormattedTx: ", formattedTx);
     const finalTx : string = await NETWORK.broadcastTx(formattedTx);
-    console.log("FinalTX: ", finalTx);
     setTxInfo({ ...txInfo, finalTx: finalTx });
-    // Wait for confirmatins
+    // Wait for confirmations
     setState("REQUEST_SENT");
     waitForConfirmation(finalTx);
   }
 
   const sign = async () => {
     const message = sbtcWithdrawMessage({
-      // network: TESTNET,
       amountSats: WITHDRAWAMOUNT,
       bitcoinAddress: wallet.addressBTC as string
     });
@@ -281,8 +180,6 @@ export default function Home() {
       userSession,
       network: new StacksTestnet(),
       onFinish: (data) => {
-        console.log("SIGNATURE: ");
-        console.log(data);
         setTxInfo({ ...txInfo, signature: data.signature });
         setState("READY");
       },
@@ -392,7 +289,7 @@ export default function Home() {
                           <Badge
                             color="warning"
                           >
-                            {txInfo.feeRate as number} sat/byte fee
+                            {txInfo.feeRate as number} sat/vB fee
                           </Badge>
                         </span>
                       </Alert>
