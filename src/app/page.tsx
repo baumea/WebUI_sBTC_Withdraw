@@ -192,11 +192,11 @@ export default function Home() {
       <Banner>
         <div className="fixed top-0 left-0 z-50 flex justify-between w-full p-4 border-b border-gray-200 bg-gray-50 dark:bg-gray-700 dark:border-gray-600">
           <div className="flex items-center mx-auto">
-            <p className="flex items-center text-sm font-normal text-gray-500 dark:text-gray-400">
+            <p className="flex items-center text-sm font-bold text-red-500 dark:text-red-400">
               <span>
                 {
                   (state != "DISCONNECTED" && state != "CONNECTING") ? (
-                    <>You currently hold {hrn(wallet.balanceBTC as number)} BTCs and {hrn(wallet.balanceSBTC as number)} sBTCs.</>
+                    <>You currently hold {hrn(wallet.balanceBTC as number)} BTCs and {hrn(wallet.balanceSBTC as number)} in sBTC.</>
                   ) : (
                       (state == "DISCONNECTED") ? (
                         <>Connect to proceed</>
@@ -220,7 +220,7 @@ export default function Home() {
             </h1>
             <div className="text-regular">
               <p>
-                Reclaim your {hrn(WITHDRAWAMOUNT)} satoshis from the peg-out.
+                Reclaim {hrn(WITHDRAWAMOUNT)} satoshis from the peg-out.
               </p>
             </div>
             <div>
