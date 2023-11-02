@@ -1,3 +1,5 @@
+:warning: *This repository moved to a [self-hosted DevOps platform](https://git.indyfac.ch/amin/Webui_sBTC_Withdraw) and is archived here.*
+
 # Web Interace to withdraw sBTC
 
 This interace has been developed within the sBTC Developer Release Program.
